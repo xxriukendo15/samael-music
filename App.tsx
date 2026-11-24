@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, Platform, StatusBar as RNStatusBar, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { Platform, StatusBar as RNStatusBar, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { CONFIG } from './config';
 import { LibraryProvider } from './LibraryContext';
@@ -29,7 +29,7 @@ export default function App() {
         <View style={[styles.root, { paddingTop: topPad }]}>
           <StatusBar style="light" />
           <View style={styles.header}>
-            <Image source={require('./logo.png')} style={styles.logo} />
+            <Text style={styles.logo}>🎧</Text>
             <Text style={styles.appName}>{CONFIG.appName}</Text>
           </View>
 
@@ -59,7 +59,7 @@ export default function App() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.background },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8 },
-  logo: { width: 32, height: 32, borderRadius: 8 },
+  logo: { fontSize: 28 },
   appName: { color: C.text, fontSize: 20, fontWeight: '800', marginLeft: 10 },
   tabs: { flexDirection: 'row', backgroundColor: C.surface, paddingBottom: 6 },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 8 },
