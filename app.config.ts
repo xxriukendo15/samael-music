@@ -1,5 +1,6 @@
 import { ExpoConfig } from 'expo/config';
-import { CONFIG } from './config';
+
+const { CONFIG } = require('./config.js');
 
 const config: ExpoConfig = {
   name: CONFIG.appName,
