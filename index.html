@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Samael Music – Música sin límites</title>
+<meta name="description" content="Samael Music: busca, escucha y descarga música gratis. Instala el APK para Android.">
+<style>
+  :root{--bg:#0b0b12;--surface:#171724;--primary:#a855f7;--accent:#ec4899;--text:#fff;--muted:#9ca3af}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+  .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:48px 20px;
+    background:radial-gradient(circle at 20% 10%,rgba(168,85,247,.35),transparent 50%),radial-gradient(circle at 80% 90%,rgba(236,72,153,.3),transparent 50%),var(--bg)}
+  .logo{font-size:64px;margin-bottom:8px}
+  h1{font-size:clamp(2.4rem,8vw,4.2rem);font-weight:900;background:linear-gradient(90deg,var(--primary),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .tag{color:var(--muted);max-width:560px;margin:14px auto 32px;font-size:1.1rem}
+  .btns{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
+  .btn{display:inline-block;padding:16px 28px;border-radius:14px;font-weight:700;text-decoration:none;color:#fff;font-size:1rem;transition:transform .15s}
+  .btn:hover{transform:translateY(-2px)}
+  .btn-dl{background:linear-gradient(90deg,var(--primary),#7c3aed)}
+  .btn-alt{background:var(--surface);border:1px solid #2d2d45}
+  .btn-donate{background:linear-gradient(90deg,var(--accent),#f43f5e)}
+  section{max-width:980px;margin:0 auto;padding:64px 20px}
+  h2{font-size:1.8rem;margin-bottom:28px;text-align:center}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+  .card{background:var(--surface);border-radius:16px;padding:22px;border:1px solid #26263a}
+  .card .i{font-size:30px;margin-bottom:8px}
+  .card h3{margin-bottom:6px;font-size:1.05rem}
+  .card p{color:var(--muted);font-size:.95rem}
+  ol{max-width:620px;margin:0 auto;padding-left:22px;color:var(--muted)}
+  ol li{margin-bottom:10px}
+  ol b{color:var(--text)}
+  .donate{text-align:center;background:var(--surface);border-radius:20px;border:1px solid #26263a;padding:40px 20px;max-width:700px}
+  .donate p{color:var(--muted);margin:10px 0 22px}
+  footer{text-align:center;color:var(--muted);padding:32px 20px;font-size:.85rem}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="logo">🎧</div>
+  <h1>Samael Music</h1>
+  <p class="tag">Busca, escucha y descarga música de todo el mundo. Reproducción en segundo plano, favoritos y modo sin conexión.</p>
+  <div class="btns">
+    <a class="btn btn-dl" href="https://github.com/TU_USUARIO/TU_REPO/releases/latest/download/SamaelMusic.apk">⬇ Descargar APK</a>
+    <a class="btn btn-alt" href="https://www.mediafire.com/TU_ENLACE_MEDIAFIRE">Descargar por MediaFire</a>
+    <a class="btn btn-donate" href="https://www.paypal.com/donate/?business=rodrigosalvadormv%40gmail.com&amount=1&currency_code=USD&item_name=Donaci%C3%B3n%20-%20animales%20de%20la%20calle&no_recurring=1" target="_blank" rel="noopener">🐾 Dona $1 para alimentar a los animales de la calle</a>
+  </div>
+</header>
+
+<section>
+  <h2>Qué puedes hacer</h2>
+  <div class="grid">
+    <div class="card"><div class="i">🔎</div><h3>Búsqueda global</h3><p>Miles de canciones de artistas independientes con la API de Audius.</p></div>
+    <div class="card"><div class="i">🎶</div><h3>Segundo plano</h3><p>Sigue escuchando con la pantalla apagada o en otra app.</p></div>
+    <div class="card"><div class="i">♥</div><h3>Favoritos</h3><p>Guarda tus canciones preferidas y encuéntralas rápido.</p></div>
+    <div class="card"><div class="i">⬇</div><h3>Sin conexión</h3><p>Descarga canciones y escúchalas sin internet.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Cómo instalar</h2>
+  <ol>
+    <li>Toca <b>Descargar APK</b>.</li>
+    <li>Abre el archivo descargado. Si Android lo pide, activa <b>Instalar apps desconocidas</b> para tu navegador.</li>
+    <li>Toca <b>Instalar</b> y abre Samael Music.</li>
+  </ol>
+</section>
+
+<section>
+  <div class="donate">
+    <h2>🐾 Ayuda a los animales de la calle</h2>
+    <p>Samael Music es gratis. Si te gusta, tu donación (desde $1, sin límite) va para alimentar a los animales de la calle.</p>
+    <a class="btn btn-donate" href="https://www.paypal.com/donate/?business=rodrigosalvadormv%40gmail.com&amount=1&currency_code=USD&item_name=Donaci%C3%B3n%20-%20animales%20de%20la%20calle&no_recurring=1" target="_blank" rel="noopener">Dona $1 para alimentar a los animales de la calle</a>
+  </div>
+</section>
+
+<footer>© Samael Music · Música vía Audius</footer>
+</body>
+</html>
