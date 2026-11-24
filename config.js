@@ -1,8 +1,6 @@
-// ============================================================
-//  PERSONALIZA AQUÍ: nombre, colores y donación.
-//  El logo se cambia reemplazando el archivo logo.png
-// ============================================================
-export const CONFIG = {
+// PERSONALIZA AQUÍ: nombre, colores y donación.
+// El logo se cambia reemplazando el archivo logo.png
+const CONFIG = {
   appName: 'Samael Music',
   slug: 'samael-music',
   androidPackage: 'com.samael.music',
@@ -24,3 +22,5 @@ export const CONFIG = {
     itemName: 'Donación - animales de la calle',
   },
 };
+
+module.exports = { CONFIG };
