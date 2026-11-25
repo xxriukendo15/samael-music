@@ -65,7 +65,14 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     setDownloading((d) => [...d, t.id]);
     try {
       await FileSystem.makeDirectoryAsync(MUSIC_DIR, { intermediates: true }).catch(() => {});
-      if (t.provider !== 'audius') {\n        Alert.alert('Vista previa', 'Apple/iTunes solo ofrece una previsualización y no se puede descargar desde Samael Music.');\n        return;\n      }\n      const url = await streamUrl(t);
+      if (t.provider !== 'audius') {
+  Alert.alert(
+    'Vista previa',
+    'Apple/iTunes solo ofrece una previsualización y no se puede descargar desde Samael Music.'
+  );
+  return;
+}
+const url = await streamUrl(t);
       const res = await FileSystem.downloadAsync(url, localPath(t.id));
       if (res.status !== 200) throw new Error(`HTTP ${res.status}`);
       setDownloads((prev) => [t, ...prev.filter((x) => x.id !== t.id)]);
