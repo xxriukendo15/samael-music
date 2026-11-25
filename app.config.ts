@@ -16,7 +16,11 @@ const config: ExpoConfig = {
       foregroundImage: './logo.png',
       backgroundColor: CONFIG.colors.background,
     },
-    permissions: ['FOREGROUND_SERVICE', 'WAKE_LOCK'],
+    permissions: [
+  'FOREGROUND_SERVICE',
+  'FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+  'WAKE_LOCK',
+],
   },
   ios: {
     supportsTablet: true,
