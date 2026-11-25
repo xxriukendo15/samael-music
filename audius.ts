@@ -1,4 +1,5 @@
 import { CONFIG } from './config';
+import { searchYouTube } from './youtube';
 
 export type Track = {
   id: string;
@@ -6,8 +7,9 @@ export type Track = {
   artist: string;
   artwork?: string;
   duration: number;
-  provider: 'audius' | 'itunes';
+  provider: 'audius' | 'itunes' | 'youtube';
   previewUrl?: string;
+  videoId?: string;
 };
 
 const FALLBACK_HOST = 'https://discoveryprovider.audius.co';
@@ -80,21 +82,24 @@ async function searchITunes(query: string): Promise<Track[]> {
   return (j.results ?? []).map(mapITunesTrack).filter(Boolean) as Track[];
 }
 
-// Audius primero (pistas completas). Si hay pocos resultados, iTunes como respaldo (30 s).
+// YouTube primero (catálogo completo). Audius como complemento. Sin previews de 30 s.
 export async function searchTracks(query: string): Promise<Track[]> {
-  let full: Track[] = [];
-  try {
-    full = await searchAudius(query);
-  } catch {}
+  const [yt, au] = await Promise.all([
+    searchYouTube(query).catch(() => []),
+    searchAudius(query).catch(() => []),
+  ]);
 
-  if (full.length >= 5) return full;
+  const youtube: Track[] = yt.map((v) => ({
+    id: `youtube:${v.videoId}`,
+    title: v.title,
+    artist: v.artist,
+    artwork: v.artwork,
+    duration: 0,
+    provider: 'youtube',
+    videoId: v.videoId,
+  }));
 
-  let previews: Track[] = [];
-  try {
-    previews = await searchITunes(query);
-  } catch {}
-
-  return [...full, ...previews];
+  return [...youtube, ...au];
 }
 
 export async function trendingTracks(): Promise<Track[]> {
@@ -103,6 +108,9 @@ export async function trendingTracks(): Promise<Track[]> {
 }
 
 export async function streamUrl(track: Track): Promise<string> {
+    if (track.provider === 'youtube') {
+    throw new Error('YouTube se reproduce con el reproductor oficial.');
+    }
   if (track.provider === 'itunes') {
     if (!track.previewUrl) throw new Error('Esta canción no tiene previsualización disponible.');
     return track.previewUrl;
