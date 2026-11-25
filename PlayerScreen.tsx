@@ -5,6 +5,7 @@ import { CONFIG } from './config';
 import { usePlayer } from './PlayerContext';
 import { useLibrary } from './LibraryContext';
 import DonateButton from './DonateButton';
+import YoutubePlayer from 'react-native-youtube-iframe';
 
 const C = CONFIG.colors;
 
@@ -34,7 +35,19 @@ export default function PlayerScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {current.artwork ? (
+      {current.provider === 'youtube' && current.videoId ? (
+  <View style={{ width: '100%', marginBottom: 8 }}>
+    <YoutubePlayer
+      height={220}
+      play={true}
+      videoId={current.videoId}
+      onChangeState={(s: string) => {
+        if (s === 'ended') next();
+      }}
+    />
+  </View>
+) : null}
+      {current.provider === 'youtube' ? null : current.artwork ? (
         <Image source={{ uri: current.artwork }} style={styles.art} />
       ) : (
         <View style={[styles.art, { alignItems: 'center', justifyContent: 'center' }]}>
@@ -81,7 +94,9 @@ export default function PlayerScreen() {
             </Text>
           </TouchableOpacity>
         ) : (
-          <Text style={styles.action}>Vista previa de Apple Music</Text>
+          <Text style={styles.action}>
+  {current.provider === 'youtube' ? 'YouTube' : 'Vista previa de Apple Music'}
+</Text>
         )}
       </View>
 
