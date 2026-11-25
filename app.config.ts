@@ -6,6 +6,14 @@ const config: ExpoConfig = {
   slug: CONFIG.slug,
   version: CONFIG.version,
   orientation: 'portrait',
+  plugins: [
+  [
+    'expo-audio',
+    {
+      enableBackgroundPlayback: true,
+    },
+  ],
+],
   icon: './logo.png',
   userInterfaceStyle: 'dark',
   backgroundColor: CONFIG.colors.background,
