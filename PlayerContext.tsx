@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+
 import TrackPlayer, {
   Capability,
   Event,
@@ -31,15 +32,20 @@ type PlayerState = {
 };
 
 const Ctx = createContext<PlayerState>(null as any);
+
 export const usePlayer = () => useContext(Ctx);
 
-export function PlayerProvider({ children }: { children: React.ReactNode }) {
+export function PlayerProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { isDownloaded } = useLibrary();
+
   const downloadedRef = useRef(isDownloaded);
   downloadedRef.current = isDownloaded;
 
   const queueRef = useRef<Track[]>([]);
-  const indexRef = useRef(0);
   const readyRef = useRef(false);
   const setupRef = useRef<Promise<void> | null>(null);
 
@@ -64,6 +70,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             Capability.SkipToNext,
             Capability.SkipToPrevious,
             Capability.Stop,
+            Capability.SeekTo,
           ],
           compactCapabilities: [
             Capability.Play,
@@ -94,19 +101,21 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
       if (
         event.type === Event.PlaybackTrackChanged &&
-        event.nextTrack !== undefined &&
-        event.nextTrack !== null
+        event.nextTrack != null
       ) {
-        const active = await TrackPlayer.getTrack(event.nextTrack);
-        if (active?.id) {
-          const found = queueRef.current.findIndex(
-            (item) => item.id === String(active.id)
-          );
-          if (found !== -1) {
-            indexRef.current = found;
-            setCurrent(queueRef.current[found]);
+        try {
+          const active = await TrackPlayer.getTrack(event.nextTrack);
+
+          if (active?.id) {
+            const found = queueRef.current.find(
+              (item) => item.id === String(active.id)
+            );
+
+            if (found) {
+              setCurrent(found);
+            }
           }
-        }
+        } catch {}
       }
     }
   );
@@ -122,38 +131,39 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
           TrackPlayer.getState(),
         ]);
 
-        setPosition(pos * 1000);
-        setDuration(dur * 1000);
-        setIsPlaying(state === State.Playing);
+        if (current?.provider === 'audius') {
+          setPosition(pos * 1000);
+          setDuration(dur * 1000);
+          setIsPlaying(state === State.Playing);
+        }
       } catch {}
     }, 500);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [current]);
 
   const playTrack = useCallback(
-    async (t: Track, queue?: Track[]) => {
+    async (track: Track, queue?: Track[]) => {
       try {
         setLoading(true);
         setError(null);
 
-        if (queue) queueRef.current = queue;
-        else if (!queueRef.current.some((item) => item.id === t.id)) {
-          queueRef.current = [t];
+        if (queue) {
+          queueRef.current = queue;
+        } else if (
+          !queueRef.current.some((item) => item.id === track.id)
+        ) {
+          queueRef.current = [track];
         }
 
-        indexRef.current = Math.max(
-          0,
-          queueRef.current.findIndex((item) => item.id === t.id)
-        );
-
-        setCurrent(t);
+        setCurrent(track);
         setPosition(0);
         setDuration(0);
 
         await setup();
 
-        if (t.provider === 'youtube') {
+        // YouTube utiliza su propio reproductor.
+        if (track.provider === 'youtube') {
           await TrackPlayer.reset();
           setIsPlaying(false);
           return;
@@ -164,11 +174,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         );
 
         const selectedIndex = playable.findIndex(
-          (item) => item.id === t.id
+          (item) => item.id === track.id
         );
 
         if (selectedIndex === -1) {
-          throw new Error('Canción no compatible con audio.');
+          throw new Error('Canción no compatible.');
         }
 
         const playerTracks = await Promise.all(
@@ -188,7 +198,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         await TrackPlayer.add(playerTracks);
         await TrackPlayer.skip(selectedIndex);
         await TrackPlayer.play();
-      } catch {
+
+      } catch (e) {
         setError('No se pudo reproducir esta canción.');
         setIsPlaying(false);
       } finally {
@@ -200,10 +211,82 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const toggle = useCallback(async () => {
     try {
+      if (!current || current.provider !== 'audius') return;
+
       await setup();
+
       const state = await TrackPlayer.getState();
 
       if (state === State.Playing) {
         await TrackPlayer.pause();
-      } else if (current?.provider === 'audius') {
-        await TrackPlayer.play
+      } else {
+        await TrackPlayer.play();
+      }
+    } catch {
+      setError('No se pudo controlar la reproducción.');
+    }
+  }, [current, setup]);
+
+  const next = useCallback(async () => {
+    const queue = queueRef.current;
+
+    if (!current) return;
+
+    const index = queue.findIndex(
+      (item) => item.id === current.id
+    );
+
+    if (index >= 0 && index < queue.length - 1) {
+      await playTrack(queue[index + 1], queue);
+    }
+  }, [current, playTrack]);
+
+  const prev = useCallback(async () => {
+    if (!current) return;
+
+    if (current.provider === 'audius' && position > 3000) {
+      await TrackPlayer.seekTo(0);
+      return;
+    }
+
+    const queue = queueRef.current;
+
+    const index = queue.findIndex(
+      (item) => item.id === current.id
+    );
+
+    if (index > 0) {
+      await playTrack(queue[index - 1], queue);
+    }
+  }, [current, position, playTrack]);
+
+  const seekTo = useCallback(async (ms: number) => {
+    try {
+      if (current?.provider !== 'audius') return;
+
+      await TrackPlayer.seekTo(ms / 1000);
+    } catch {
+      setError('No se pudo cambiar la posición.');
+    }
+  }, [current]);
+
+  return (
+    <Ctx.Provider
+      value={{
+        current,
+        isPlaying,
+        loading,
+        position,
+        duration,
+        error,
+        playTrack,
+        toggle,
+        next,
+        prev,
+        seekTo,
+      }}
+    >
+      {children}
+    </Ctx.Provider>
+  );
+}
