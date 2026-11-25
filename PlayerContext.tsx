@@ -1,5 +1,18 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { Audio, AVPlaybackStatus } from 'expo-av';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import TrackPlayer, {
+  Capability,
+  Event,
+  State,
+  useTrackPlayerEvents,
+} from 'react-native-track-player';
+
 import { Track, streamUrl } from './audius';
 import { localPath, useLibrary } from './LibraryContext';
 
@@ -22,13 +35,13 @@ export const usePlayer = () => useContext(Ctx);
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const { isDownloaded } = useLibrary();
-  const soundRef = useRef<Audio.Sound | null>(null);
-  const queueRef = useRef<Track[]>([]);
-  const indexRef = useRef(0);
-  const reqRef = useRef(0);
-  const nextRef = useRef<() => Promise<void>>(async () => {});
   const downloadedRef = useRef(isDownloaded);
   downloadedRef.current = isDownloaded;
+
+  const queueRef = useRef<Track[]>([]);
+  const indexRef = useRef(0);
+  const readyRef = useRef(false);
+  const setupRef = useRef<Promise<void> | null>(null);
 
   const [current, setCurrent] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -37,105 +50,160 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    Audio.setAudioModeAsync({
-      staysActiveInBackground: true,
-      playsInSilentModeIOS: true,
-      shouldDuckAndroid: true,
-      playThroughEarpieceAndroid: false,
-    }).catch(() => {});
-    return () => {
-      soundRef.current?.unloadAsync();
-    };
+  const setup = useCallback(async () => {
+    if (readyRef.current) return;
+
+    if (!setupRef.current) {
+      setupRef.current = (async () => {
+        await TrackPlayer.setupPlayer();
+
+        await TrackPlayer.updateOptions({
+          capabilities: [
+            Capability.Play,
+            Capability.Pause,
+            Capability.SkipToNext,
+            Capability.SkipToPrevious,
+            Capability.Stop,
+          ],
+          compactCapabilities: [
+            Capability.Play,
+            Capability.Pause,
+            Capability.SkipToNext,
+          ],
+        });
+
+        readyRef.current = true;
+      })();
+    }
+
+    await setupRef.current;
   }, []);
 
-  const onStatus = useCallback((s: AVPlaybackStatus) => {
-    if (!s.isLoaded) return;
-    setIsPlaying(s.isPlaying);
-    setPosition(s.positionMillis);
-    setDuration(s.durationMillis ?? 0);
-    if (s.didJustFinish) nextRef.current();
+  useEffect(() => {
+    setup().catch(() => {
+      setError('No se pudo iniciar el reproductor.');
+    });
+  }, [setup]);
+
+  useTrackPlayerEvents(
+    [Event.PlaybackState, Event.PlaybackTrackChanged],
+    async (event) => {
+      if (event.type === Event.PlaybackState) {
+        setIsPlaying(event.state === State.Playing);
+      }
+
+      if (
+        event.type === Event.PlaybackTrackChanged &&
+        event.nextTrack !== undefined &&
+        event.nextTrack !== null
+      ) {
+        const active = await TrackPlayer.getTrack(event.nextTrack);
+        if (active?.id) {
+          const found = queueRef.current.findIndex(
+            (item) => item.id === String(active.id)
+          );
+          if (found !== -1) {
+            indexRef.current = found;
+            setCurrent(queueRef.current[found]);
+          }
+        }
+      }
+    }
+  );
+
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      if (!readyRef.current) return;
+
+      try {
+        const [pos, dur, state] = await Promise.all([
+          TrackPlayer.getPosition(),
+          TrackPlayer.getDuration(),
+          TrackPlayer.getState(),
+        ]);
+
+        setPosition(pos * 1000);
+        setDuration(dur * 1000);
+        setIsPlaying(state === State.Playing);
+      } catch {}
+    }, 500);
+
+    return () => clearInterval(timer);
   }, []);
 
   const playTrack = useCallback(
     async (t: Track, queue?: Track[]) => {
-      const req = ++reqRef.current;
       try {
         setLoading(true);
         setError(null);
+
         if (queue) queueRef.current = queue;
-        else if (!queueRef.current.some((x) => x.id === t.id)) queueRef.current = [t];
-        indexRef.current = Math.max(0, queueRef.current.findIndex((x) => x.id === t.id));
+        else if (!queueRef.current.some((item) => item.id === t.id)) {
+          queueRef.current = [t];
+        }
+
+        indexRef.current = Math.max(
+          0,
+          queueRef.current.findIndex((item) => item.id === t.id)
+        );
+
         setCurrent(t);
         setPosition(0);
         setDuration(0);
 
-        if (soundRef.current) {
-          await soundRef.current.unloadAsync().catch(() => {});
-          soundRef.current = null;
-        }
+        await setup();
+
         if (t.provider === 'youtube') {
-  setIsPlaying(false);
-  return;
-        }
-        const uri = downloadedRef.current(t.id) ? localPath(t.id) : await streamUrl(t);
-        const { sound } = await Audio.Sound.createAsync(
-          { uri },
-          { shouldPlay: true, progressUpdateIntervalMillis: 500 },
-          onStatus
-        );
-        if (req !== reqRef.current) {
-          await sound.unloadAsync();
+          await TrackPlayer.reset();
+          setIsPlaying(false);
           return;
         }
-        soundRef.current = sound;
+
+        const playable = queueRef.current.filter(
+          (item) => item.provider === 'audius'
+        );
+
+        const selectedIndex = playable.findIndex(
+          (item) => item.id === t.id
+        );
+
+        if (selectedIndex === -1) {
+          throw new Error('Canción no compatible con audio.');
+        }
+
+        const playerTracks = await Promise.all(
+          playable.map(async (item) => ({
+            id: item.id,
+            url: downloadedRef.current(item.id)
+              ? localPath(item.id)
+              : await streamUrl(item),
+            title: item.title,
+            artist: item.artist,
+            artwork: item.artwork,
+            duration: item.duration || undefined,
+          }))
+        );
+
+        await TrackPlayer.reset();
+        await TrackPlayer.add(playerTracks);
+        await TrackPlayer.skip(selectedIndex);
+        await TrackPlayer.play();
       } catch {
         setError('No se pudo reproducir esta canción.');
         setIsPlaying(false);
       } finally {
-        if (req === reqRef.current) setLoading(false);
+        setLoading(false);
       }
     },
-    [onStatus]
+    [setup]
   );
 
   const toggle = useCallback(async () => {
-    const s = soundRef.current;
-    if (!s) return;
-    const st = await s.getStatusAsync();
-    if (!st.isLoaded) return;
-    if (st.isPlaying) await s.pauseAsync();
-    else await s.playAsync();
-  }, []);
+    try {
+      await setup();
+      const state = await TrackPlayer.getState();
 
-  const next = useCallback(async () => {
-    const q = queueRef.current;
-    if (!q.length) return;
-    const i = (indexRef.current + 1) % q.length;
-    await playTrack(q[i]);
-  }, [playTrack]);
-  nextRef.current = next;
-
-  const seekTo = useCallback(async (ms: number) => {
-    await soundRef.current?.setPositionAsync(ms).catch(() => {});
-  }, []);
-
-  const prev = useCallback(async () => {
-    const q = queueRef.current;
-    if (!q.length) return;
-    if (position > 3000) {
-      await seekTo(0);
-      return;
-    }
-    const i = (indexRef.current - 1 + q.length) % q.length;
-    await playTrack(q[i]);
-  }, [playTrack, position, seekTo]);
-
-  return (
-    <Ctx.Provider
-      value={{ current, isPlaying, loading, position, duration, error, playTrack, toggle, next, prev, seekTo }}
-    >
-      {children}
-    </Ctx.Provider>
-  );
-}
+      if (state === State.Playing) {
+        await TrackPlayer.pause();
+      } else if (current?.provider === 'audius') {
+        await TrackPlayer.play
