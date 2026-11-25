@@ -74,6 +74,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
           await soundRef.current.unloadAsync().catch(() => {});
           soundRef.current = null;
         }
+        if (t.provider === 'youtube') {
+  setIsPlaying(false);
+  return;
+        }
         const uri = downloadedRef.current(t.id) ? localPath(t.id) : await streamUrl(t);
         const { sound } = await Audio.Sound.createAsync(
           { uri },
