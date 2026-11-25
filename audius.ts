@@ -80,9 +80,21 @@ async function searchITunes(query: string): Promise<Track[]> {
   return (j.results ?? []).map(mapITunesTrack).filter(Boolean) as Track[];
 }
 
-/** Busca en dos catálogos. iTunes ofrece previsualizaciones; Audius puede ofrecer la pista completa. */
+// Audius primero (pistas completas). Si hay pocos resultados, iTunes como respaldo (30 s).
 export async function searchTracks(query: string): Promise<Track[]> {
-    return searchAudius(query);
+  let full: Track[] = [];
+  try {
+    full = await searchAudius(query);
+  } catch {}
+
+  if (full.length >= 5) return full;
+
+  let previews: Track[] = [];
+  try {
+    previews = await searchITunes(query);
+  } catch {}
+
+  return [...full, ...previews];
 }
 
 export async function trendingTracks(): Promise<Track[]> {
