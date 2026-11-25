@@ -82,14 +82,7 @@ async function searchITunes(query: string): Promise<Track[]> {
 
 /** Busca en dos catálogos. iTunes ofrece previsualizaciones; Audius puede ofrecer la pista completa. */
 export async function searchTracks(query: string): Promise<Track[]> {
-  const results = await Promise.allSettled([searchAudius(query), searchITunes(query)]);
-  const audius = results[0].status === 'fulfilled' ? results[0].value : [];
-  const itunes = results[1].status === 'fulfilled' ? results[1].value : [];
-  const combined = [...audius, ...itunes];
-  if (!combined.length && results.every((r) => r.status === 'rejected')) {
-    throw new Error('No se pudo consultar ningún catálogo musical.');
-  }
-  return combined;
+    return searchAudius(query);
 }
 
 export async function trendingTracks(): Promise<Track[]> {
