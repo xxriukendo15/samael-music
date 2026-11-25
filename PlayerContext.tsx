@@ -74,7 +74,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
           await soundRef.current.unloadAsync().catch(() => {});
           soundRef.current = null;
         }
-        const uri = downloadedRef.current(t.id) ? localPath(t.id) : await streamUrl(t.id);
+        const uri = downloadedRef.current(t.id) ? localPath(t.id) : await streamUrl(t);
         const { sound } = await Audio.Sound.createAsync(
           { uri },
           { shouldPlay: true, progressUpdateIntervalMillis: 500 },

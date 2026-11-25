@@ -74,11 +74,15 @@ export default function PlayerScreen() {
             {isFav(current.id) ? '♥ Favorito' : '♡ Favorito'}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => (downloaded ? removeDownload(current) : download(current))}>
-          <Text style={[styles.action, downloaded && { color: C.primary }]}>
-            {downloaded ? '✓ Descargada' : '⬇ Descargar'}
-          </Text>
-        </TouchableOpacity>
+        {current.provider === 'audius' ? (
+          <TouchableOpacity onPress={() => (downloaded ? removeDownload(current) : download(current))}>
+            <Text style={[styles.action, downloaded && { color: C.primary }]}>
+              {downloaded ? '✓ Descargada' : '⬇ Descargar'}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <Text style={styles.action}>Vista previa de Apple Music</Text>
+        )}
       </View>
 
       <View style={{ width: '100%', marginTop: 16 }}>

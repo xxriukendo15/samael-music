@@ -37,18 +37,20 @@ export default function TrackRow({ track, queue }: { track: Track; queue: Track[
           {isFav(track.id) ? '♥' : '♡'}
         </Text>
       </TouchableOpacity>
-      <TouchableOpacity
-        onPress={() => (downloaded ? removeDownload(track) : download(track))}
-        style={styles.icon}
-      >
-        {busy ? (
-          <ActivityIndicator color={C.primary} />
-        ) : (
-          <Text style={[styles.iconText, downloaded && { color: C.primary }]}>
-            {downloaded ? '✓' : '⬇'}
-          </Text>
-        )}
-      </TouchableOpacity>
+      {track.provider === 'audius' && (
+        <TouchableOpacity
+          onPress={() => (downloaded ? removeDownload(track) : download(track))}
+          style={styles.icon}
+        >
+          {busy ? (
+            <ActivityIndicator color={C.primary} />
+          ) : (
+            <Text style={[styles.iconText, downloaded && { color: C.primary }]}>
+              {downloaded ? '✓' : '⬇'}
+            </Text>
+          )}
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 }
